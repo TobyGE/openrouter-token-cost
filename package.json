@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "refresh": "node scripts/refresh.js",
+    "preview": "node scripts/render-preview.js",
     "check": "node scripts/refresh.js --check"
   }
 }

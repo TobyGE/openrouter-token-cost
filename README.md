@@ -8,12 +8,16 @@ The chart is generated from OpenRouter's daily rankings dataset and public model
 pricing. It is intended for lightweight weekly manual maintenance, not as an
 official revenue report.
 
+![OpenRouter Rankings USD Chart](assets/chart-preview.svg)
+
 ## Files
 
 - `index.html` - the published chart.
 - `maintain.html` - a local audit page for checking the embedded chart data.
 - `scripts/refresh.js` - fetches rankings and prices, then rewrites the chart
   payload inside `index.html`.
+- `scripts/render-preview.js` - renders the README preview image from the chart
+  payload.
 
 ## View Locally
 
@@ -35,6 +39,7 @@ only; do not commit it, paste it into GitHub, or store it in the repository.
 export OPENROUTER_API_KEY=<your-openrouter-api-key>
 npm run refresh
 npm run check
+npm run preview
 unset OPENROUTER_API_KEY
 ```
 
@@ -54,7 +59,7 @@ Open `http://localhost:8000/maintain.html` and check:
 If the update looks correct:
 
 ```bash
-git add index.html README.md
+git add index.html assets/chart-preview.svg
 git commit -m "Refresh OpenRouter spend data"
 git push
 ```
