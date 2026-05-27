@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OpenRouter Spend Chart Maintenance</title>
+  <style>
+    :root {
+      --bg: #f7f8fa;
+      --ink: #111827;
+      --muted: #6b7280;
+      --line: #d9dee7;
+      --panel: #ffffff;
+      --soft: #eef2f7;
+      --good: #047857;
+      --warn: #b45309;
+      --bad: #b91c1c;
+      --accent: #2563eb;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.45;
+    }
+
+    button, input, textarea {
+      font: inherit;
+    }
+
+    .page {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 28px 20px 46px;
+    }
+
+    .top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 20px;
+      margin-bottom: 22px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      line-height: 1.16;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      max-width: 760px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      min-height: 36px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--panel);
+      color: #1f2937;
+      padding: 7px 11px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .btn.primary {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 360px;
+      gap: 22px;
+      align-items: start;
+    }
+
+    .band {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      padding: 18px;
+    }
+
+    h2 {
+      margin: 0 0 12px;
+      font-size: 16px;
+      letter-spacing: 0;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 12px;
+      min-width: 0;
+      background: #fbfcfe;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 5px;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 18px;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+    }
+
+    .checks {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .check {
+      display: grid;
+      grid-template-columns: 82px minmax(0, 1fr);
+      align-items: start;
+      gap: 10px;
+      border-top: 1px solid var(--line);
+      padding-top: 9px;
+      font-size: 13px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 24px;
+      border-radius: 999px;
+      padding: 2px 9px;
+      font-size: 12px;
+      font-weight: 650;
+      background: var(--soft);
+      color: #374151;
+      white-space: nowrap;
+    }
+
+    .tag.good { background: #dcfce7; color: var(--good); }
+    .tag.warn { background: #fef3c7; color: var(--warn); }
+    .tag.bad { background: #fee2e2; color: var(--bad); }
+
+    .tables {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th, td {
+      border-top: 1px solid var(--line);
+      padding: 8px 0;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 12px;
+    }
+
+    td:last-child, th:last-child {
+      text-align: right;
+      white-space: nowrap;
+      padding-left: 12px;
+    }
+
+    .model {
+      max-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .tools {
+      display: grid;
+      gap: 14px;
+    }
+
+    .field {
+      display: grid;
+      gap: 7px;
+      font-size: 13px;
+      color: #374151;
+    }
+
+    input[type="file"] {
+      width: 100%;
+      border: 1px dashed var(--line);
+      border-radius: 7px;
+      background: #fbfcfe;
+      padding: 10px;
+      color: var(--muted);
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 142px;
+      resize: vertical;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 10px;
+      background: #fbfcfe;
+      color: var(--ink);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    code, pre {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+    }
+
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fbfcfe;
+      padding: 10px;
+      color: #374151;
+    }
+
+    .notice {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .empty {
+      color: var(--muted);
+      font-size: 13px;
+      border-top: 1px solid var(--line);
+      padding-top: 10px;
+    }
+
+    @media (max-width: 940px) {
+      .top { flex-direction: column; }
+      .actions { justify-content: flex-start; }
+      .layout { grid-template-columns: 1fr; }
+      .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 640px) {
+      .page { padding: 20px 14px 34px; }
+      .metrics, .tables { grid-template-columns: 1fr; }
+      h1 { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="top">
+      <div>
+        <h1>Spend Chart Maintenance</h1>
+        <p class="subtitle">Audit the embedded OpenRouter spend chart payload before publishing. This page checks stale data, free-model pricing, Others removal, and models that were counted at $0 because no public price matched.</p>
+      </div>
+      <div class="actions">
+        <a class="btn" href="index.html">Open chart</a>
+        <button class="btn" id="reloadBtn" type="button">Reload</button>
+        <button class="btn primary" id="downloadBtn" type="button">Download JSON</button>
+      </div>
+    </header>
+
+    <div class="layout">
+      <section class="band">
+        <h2>Status</h2>
+        <div class="metrics" id="metrics"></div>
+        <div class="checks" id="checks"></div>
+
+        <div class="tables">
+          <section>
+            <h2>Latest Week Top Models</h2>
+            <div id="topModels"></div>
+          </section>
+          <section>
+            <h2>Unpriced Models</h2>
+            <div id="unpricedModels"></div>
+          </section>
+        </div>
+      </section>
+
+      <aside class="band tools">
+        <section class="field">
+          <label for="fileInput">Load local index.html or chart JSON</label>
+          <input id="fileInput" type="file" accept=".html,.json,application/json,text/html">
+          <div class="notice">When opened from GitHub Pages or a local HTTP server, this page auto-loads <code>index.html</code>. For <code>file://</code>, choose the file manually if the browser blocks local fetch.</div>
+        </section>
+
+        <section class="field">
+          <label for="pasteBox">Paste chart-data JSON or index.html</label>
+          <textarea id="pasteBox" spellcheck="false" placeholder="Paste JSON or full index.html here"></textarea>
+          <button class="btn" id="parseBtn" type="button">Parse pasted data</button>
+        </section>
+
+        <section class="field">
+          <label>Refresh command</label>
+          <pre>OPENROUTER_API_KEY=&lt;your-openrouter-api-key&gt; npm run refresh
+npm run check</pre>
+        </section>
+
+        <section class="field">
+          <label>Manual weekly update</label>
+          <pre>1. Export the key only in your shell.
+2. Run npm run refresh.
+3. Open maintain.html and check warnings.
+4. Commit index.html after review.</pre>
+        </section>
+      </aside>
+    </div>
+  </main>
+
+  <script>
+    const state = { payload: null };
+    const metricsEl = document.getElementById("metrics");
+    const checksEl = document.getElementById("checks");
+    const topModelsEl = document.getElementById("topModels");
+    const unpricedEl = document.getElementById("unpricedModels");
+    const pasteBox = document.getElementById("pasteBox");
+
+    document.getElementById("reloadBtn").addEventListener("click", loadFromIndex);
+    document.getElementById("parseBtn").addEventListener("click", () => useText(pasteBox.value));
+    document.getElementById("downloadBtn").addEventListener("click", downloadJson);
+    document.getElementById("fileInput").addEventListener("change", async (event) => {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      useText(await file.text());
+    });
+
+    loadFromIndex();
+
+    async function loadFromIndex() {
+      try {
+        const response = await fetch(`index.html?cache=${Date.now()}`, { cache: "no-store" });
+        if (!response.ok) throw new Error(`index.html returned ${response.status}`);
+        useText(await response.text());
+      } catch (error) {
+        renderError(`Could not auto-load index.html: ${error.message}`);
+      }
+    }
+
+    function useText(text) {
+      try {
+        const payload = parsePayload(text);
+        state.payload = payload;
+        render(payload);
+      } catch (error) {
+        renderError(error.message);
+      }
+    }
+
+    function parsePayload(text) {
+      const trimmed = text.trim();
+      if (!trimmed) throw new Error("No data provided.");
+      if (trimmed.startsWith("{")) return JSON.parse(trimmed);
+      const doc = new DOMParser().parseFromString(trimmed, "text/html");
+      const node = doc.querySelector("#chart-data");
+      if (!node) throw new Error("Could not find <script id=\"chart-data\">.");
+      return JSON.parse(node.textContent);
+    }
+
+    function render(payload) {
+      const latest = payload.data.at(-1);
+      const latestWeek = latest ? latest.x : "n/a";
+      const latestEntries = latest ? Object.entries(latest.ys) : [];
+      const totalLatest = latestEntries.reduce((sum, [, value]) => sum + value, 0);
+      const allEntries = payload.data.flatMap((week) => Object.entries(week.ys).map(([model, value]) => ({ week: week.x, model, value })));
+      const freeNonzero = allEntries.filter((entry) => entry.model.includes(":free") && entry.value > 0);
+      const hasOthers = payload.data.some((week) => Object.hasOwn(week.ys, "Others"));
+      const unpriced = payload.estimation?.unpricedModels || [];
+      const ageDays = payload.asOf ? Math.max(0, Math.round((Date.now() - new Date(`${payload.asOf}T00:00:00Z`).getTime()) / 86400000)) : null;
+
+      metricsEl.innerHTML = [
+        metric("As of", payload.asOf || "n/a"),
+        metric("Latest week", latestWeek),
+        metric("Latest spend", money(totalLatest)),
+        metric("Series", latestEntries.length.toString())
+      ].join("");
+
+      checksEl.innerHTML = [
+        check(ageDays !== null && ageDays <= 3 ? "good" : "warn", ageDays === null ? "Unknown age" : `${ageDays} days old`, "Dataset freshness"),
+        check(hasOthers ? "bad" : "good", hasOthers ? "Others exists" : "No Others series", "Others removal"),
+        check(freeNonzero.length ? "bad" : "good", `${freeNonzero.length} nonzero free series`, "Free pricing"),
+        check(unpriced.length ? "warn" : "good", `${unpriced.length} listed in audit payload`, "Unpriced models")
+      ].join("");
+
+      topModelsEl.innerHTML = table(
+        latestEntries
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 20)
+          .map(([model, value]) => [labelFor(payload, model), money(value)]),
+        ["Model", "USD"]
+      );
+
+      unpricedEl.innerHTML = unpriced.length
+        ? table(unpriced.slice(0, 20).map((item) => [item.model, compactNumber(item.tokens)]), ["Model", "Tokens"])
+        : `<div class="empty">No unpriced model was recorded.</div>`;
+    }
+
+    function renderError(message) {
+      metricsEl.innerHTML = "";
+      topModelsEl.innerHTML = "";
+      unpricedEl.innerHTML = "";
+      checksEl.innerHTML = `<div class="check"><span class="tag bad">Error</span><div>${escapeHtml(message)}</div></div>`;
+    }
+
+    function metric(label, value) {
+      return `<div class="metric"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`;
+    }
+
+    function check(status, value, label) {
+      return `<div class="check"><span class="tag ${status}">${escapeHtml(label)}</span><div>${escapeHtml(value)}</div></div>`;
+    }
+
+    function table(rows, headers) {
+      if (!rows.length) return `<div class="empty">No rows.</div>`;
+      return `<table><thead><tr>${headers.map((item) => `<th>${escapeHtml(item)}</th>`).join("")}</tr></thead><tbody>${rows.map((row) => `<tr><td class="model" title="${escapeHtml(row[0])}">${escapeHtml(row[0])}</td><td>${escapeHtml(row[1])}</td></tr>`).join("")}</tbody></table>`;
+    }
+
+    function labelFor(payload, model) {
+      const hit = (payload.legend || []).find((item) => item.name === model);
+      return hit?.label || model;
+    }
+
+    function money(value) {
+      if (!Number.isFinite(value)) return "$0";
+      if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(value >= 10_000_000 ? 0 : 1)}M`;
+      if (value >= 1_000) return `$${(value / 1_000).toFixed(value >= 100_000 ? 0 : 1)}K`;
+      return `$${value.toFixed(0)}`;
+    }
+
+    function compactNumber(value) {
+      if (value >= 1_000_000_000_000) return `${(value / 1_000_000_000_000).toFixed(2)}T`;
+      if (value >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(1)}B`;
+      if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+      return String(value || 0);
+    }
+
+    function downloadJson() {
+      if (!state.payload) return;
+      const blob = new Blob([JSON.stringify(state.payload, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `openrouter-spend-${state.payload.asOf || "chart"}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+  </script>
+</body>
+</html>

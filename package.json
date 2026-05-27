@@ -1,0 +1,10 @@
+{
+  "name": "openrouter-token-cost",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "refresh": "node scripts/refresh.js",
+    "check": "node scripts/refresh.js --check"
+  }
+}
